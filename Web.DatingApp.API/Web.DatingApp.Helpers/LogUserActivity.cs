@@ -1,0 +1,20 @@
+﻿using Microsoft.AspNetCore.Mvc.Filters;
+using Web.DatingApp.API.Web.DatingApp.Extensions;
+using Web.DatingApp.API.Web.DatingApp.Interfaces.Repositories;
+
+namespace Web.DatingApp.API.Web.DatingApp.Helpers
+{
+    public class LogUserActivity : IAsyncActionFilter
+    {
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        {
+            var resultContext = await next();
+            if(!resultContext.HttpContext.User.Identity.IsAuthenticated) return;
+            var userId = resultContext.HttpContext.User.GetUserId();
+            var repo = resultContext.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+            var user = await repo.GetUserByIdAsync(int.Parse(userId));
+            user.LastActive = DateTime.UtcNow;
+            await repo.SaveAllChanges();
+        }
+    }
+}
